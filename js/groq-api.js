@@ -7,7 +7,7 @@ const GroqAPI = {
   /**
    * API key storage key
    */
-  API_KEY_STORAGE_KEY: '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',
+  API_KEY_STORAGE_KEY: '',
   
   /**
    * Save the Groq API key to localStorage
