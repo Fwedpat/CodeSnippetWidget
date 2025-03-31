@@ -7,7 +7,7 @@ const GroqAPI = {
   /**
    * API key storage key
    */
-  API_KEY_STORAGE_KEY: '${{ secrets.SuperSecret }}',
+  API_KEY_STORAGE_KEY: '${{ secrets.GROQ_SECRET }}',
   
   /**
    * Save the Groq API key to localStorage
