@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Code Widget</title>
+  <!-- Include highlight.js for syntax highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/typescript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/jsx.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/css.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/html.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/json.min.js"></script>
+  
+  <!-- Custom JS files -->
+  <script src="js/storage.js"></script>
+  <script src="js/groq-api.js"></script>
+  <script src="js/ui.js"></script>
+  
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      background-color: #191919;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+    
+    .container {
+      width: 100%;
+      max-width: 700px;
+      padding: 40px;
+      background-color: #c4a9ff;
+      box-sizing: border-box;
+      border-radius: 16px;
+    }
+    
+    .editor {
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    }
+    
+    .title-bar {
+      background-color: #1e2030;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid #2a2f45;
+    }
+    
+    .window-controls {
+      display: flex;
+      gap: 8px;
+      margin-left: 12px;
+      padding: 8px 0;
+    }
+    
+    .control {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background-color: #6b6b6b;
+    }
+    
+    .tabs {
+      display: flex;
+      margin-left: 20px;
+      align-items: center;
+    }
+    
+    .tab {
+      padding: 8px 16px;
+      background-color: #2d3555;
+      color: #4d7bfe;
+      font-size: 14px;
+      border-top-left-radius: 6px;
+      border-top-right-radius: 6px;
+      margin-right: 4px;
+      margin-top: 6px;
+    }
+    
+    .language-select {
+      margin-left: 20px;
+      background-color: #2a2f45;
+      color: #4d7bfe;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 14px;
+      outline: none;
+    }
+    
+    .language-select option {
+      background-color: #1e2030;
+      color: #fff;
+    }
+    
+    .filename-container {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .filename {
+      background-color: transparent;
+      border: 1px solid transparent;
+      color: #9e9e9e;
+      font-size: 14px;
+      text-align: center;
+      padding: 4px 8px;
+      border-radius: 4px;
+      outline: none;
+      min-width: 100px;
+    }
+    
+    .filename:hover {
+      border-color: #2a2f45;
+    }
+    
+    .filename:focus {
+      border-color: #4d7bfe;
+      color: #fff;
+    }
+    
+    .editor-content {
+      background-color: #1e2030;
+      position: relative;
+      display: flex;
+    }
+    
+    .line-numbers {
+      user-select: none;
+      text-align: right;
+      padding: 16px 12px;
+      color: #636b8a;
+      font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+      font-size: 14px;
+      line-height: 1.5;
+      background-color: #1a1c2b;
+      min-width: 40px;
+    }
+    
+    #editor-container {
+      position: relative;
+      flex: 1;
+      padding: 16px 0 16px 12px;
+    }
+    
+    #editor-textarea {
+      font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #fff;
+      background-color: transparent;
+      border: none;
+      width: 100%;
+      min-height: 150px;
+      outline: none;
+      resize: none;
+      white-space: pre;
+      overflow: hidden;
+      position: absolute;
+      top: 16px;
+      left: 12px;
+      margin: 0;
+      padding: 0;
+      z-index: 1;
+      color: transparent;
+      caret-color: white;
+    }
+    
+    #editor-highlight {
+      font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+      font-size: 14px;
+      line-height: 1.5;
+      background-color: transparent;
+      margin: 0;
+      padding: 0;
+      white-space: pre;
+      pointer-events: none;
+    }
+    
+    /* Custom syntax highlighting to match the new design */
+    .hljs-keyword {
+      color: #ff79c6;
+    }
+    
+    .hljs-string {
+      color: #a5e075;
+    }
+    
+    .hljs-tag .hljs-name {
+      color: #4d7bfe;
+    }
+    
+    .hljs-attr {
+      color: #4d7bfe;
+    }
+    
+    .hljs-title.function_ {
+      color: #4d7bfe;
+    }
+    
+    .hljs-comment {
+      color: #636b8a;
+      font-style: italic;
+    }
+    
+    .hljs-variable {
+      color: #ff79c6;
+    }
+    
+    .hljs-literal {
+      color: #f1fa8c;
+    }
+    
+    .hljs-number {
+      color: #bd93f9;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="editor">
+      <div class="title-bar">
+        <div class="window-controls">
+          <div class="control"></div>
+          <div class="control"></div>
+          <div class="control"></div>
+        </div>
+        <div class="tabs">
+          <div class="tab" id="language-tab">js</div>
+          <select class="language-select" id="language-select">
+            <option value="javascript">JavaScript</option>
+            <option value="typescript">TypeScript</option>
+            <option value="jsx">JSX/React</option>
+            <option value="html">HTML</option>
+            <option value="css">CSS</option>
+            <option value="python" selected>Python</option>
+            <option value="json">JSON</option>
+          </select>
+        </div>
+        <div class="filename-container">
+          <input type="text" class="filename" id="filename" value="Untitled-1">
+        </div>
+        <div style="width: 20px;"></div> <!-- Spacer -->
+      </div>
+      <div class="editor-content">
+        <div class="line-numbers" id="line-numbers"></div>
+        <div id="editor-container">
+          <textarea id="editor-textarea" spellcheck="false">import { Detail } from "@raycast/api";
+
+/**
+ * Just sample of jsdoc
+ * @name Command
+ * @param {Object} props
+ */
+export default function Command() {
+  // Return a detail view with markdown
+  return <Detail markdown="Hello World" />;
+}</textarea>
+          <pre><code id="editor-highlight" class="language-jsx"></code></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize UI components
+      CodeUI.init();
+      
+      const textarea = document.getElementById('editor-textarea');
+      const highlight = document.getElementById('editor-highlight');
+      const lineNumbers = document.getElementById('line-numbers');
+      const languageSelect = document.getElementById('language-select');
+      const languageTab = document.getElementById('language-tab');
+      const filename = document.getElementById('filename');
+      
+      // Language samples for quick testing
+      const languageSamples = {
+        javascript: `// JavaScript Example
+const greeting = "Hello, World!";
+function sayHello(name) {
+  return \`\${greeting} My name is \${name}.\`;
+}
+console.log(sayHello("Developer"));`,
+
+        typescript: `// TypeScript Example
+interface User {
+  name: string;
+  age: number;
+}
+
+function greetUser(user: User): string {
+  return \`Hello, \${user.name}! You are \${user.age} years old.\`;
+}
+
+const user: User = { name: "Alice", age: 30 };
+console.log(greetUser(user));`,
+
+        jsx: `import { Detail } from "@raycast/api";
+
+/**
+ * Just sample of jsdoc
+ * @name Command
+ * @param {Object} props
+ */
+export default function Command() {
+  // Return a detail view with markdown
+  return <Detail markdown="Hello World" />;
+}`,
+
+        html: `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <h1>Hello World</h1>
+  <p>This is a sample HTML document.</p>
+</body>
+</html>`,
+
+        css: `/* CSS Example */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 20px;
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}`,
+
+        python: `# Python Example
+def fibonacci(n):
+    """Generate the Fibonacci sequence up to n."""
+    a, b = 0, 1
+    result = []
+    while a < n:
+        result.append(a)
+        a, b = b, a + b
+    return result
+
+# Print the first 10 Fibonacci numbers
+print(fibonacci(100))`,
+
+        json: `{
+  "name": "Code Editor",
+  "version": "1.0.0",
+  "description": "A beautiful code editor with syntax highlighting",
+  "author": {
+    "name": "Developer",
+    "email": "dev@example.com"
+  },
+  "features": [
+    "Syntax highlighting",
+    "Line numbers",
+    "Multiple language support"
+  ],
+  "settings": {
+    "theme": "dark",
+    "fontSize": 14,
+    "tabSize": 2
+  }
+}`
+      };
+      
+      // Initial highlighting and line numbers
+      updateHighlighting();
+      updateLineNumbers();
+      
+      // Update highlighting when text changes
+      textarea.addEventListener('input', () => {
+        updateHighlighting();
+        updateLineNumbers();
+      });
+      
+      // Handle tab key
+      textarea.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab') {
+          e.preventDefault();
+          
+          // Get cursor position
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          
+          // Insert tab at cursor position
+          const value = textarea.value;
+          textarea.value = value.substring(0, start) + '  ' + value.substring(end);
+          
+          // Move cursor after the inserted tab
+          textarea.selectionStart = textarea.selectionEnd = start + 2;
+          
+          // Update highlighting and line numbers
+          updateHighlighting();
+          updateLineNumbers();
+        }
+      });
+      
+      // Handle language change
+      languageSelect.addEventListener('change', () => {
+        const selectedLanguage = languageSelect.value;
+        
+        // Update the language tab text
+        languageTab.textContent = getLanguageShortName(selectedLanguage);
+        
+        // Update the code highlight language class
+        highlight.className = `language-${selectedLanguage}`;
+        
+        // Optionally load a sample for the selected language
+        if (confirm("Load a sample for this language?")) {
+          textarea.value = languageSamples[selectedLanguage] || "";
+          updateHighlighting();
+          updateLineNumbers();
+        }
+      });
+      
+      // Get short name for language tab
+      function getLanguageShortName(language) {
+        const shortNames = {
+          javascript: 'js',
+          typescript: 'ts',
+          jsx: 'jsx',
+          html: 'html',
+          css: 'css',
+          python: 'py',
+          json: 'json'
+        };
+        
+        return shortNames[language] || language.substring(0, 2);
+      }
+      
+      // Sync scroll positions
+      textarea.addEventListener('scroll', () => {
+        highlight.scrollTop = textarea.scrollTop;
+        highlight.scrollLeft = textarea.scrollLeft;
+      });
+      
+      // Adjust textarea height to match content
+      function adjustTextareaHeight() {
+        // Reset height to auto to get the correct scrollHeight
+        textarea.style.height = 'auto';
+        // Set the height to match the scrollHeight
+        textarea.style.height = textarea.scrollHeight + 'px';
+        // Make sure the highlight element has the same height
+        highlight.style.height = textarea.style.height;
+      }
+      
+      // Update syntax highlighting
+      function updateHighlighting() {
+        // Get the textarea content
+        const code = textarea.value;
+        
+        // Update the highlight element with the code
+        highlight.textContent = code;
+        
+        // Apply syntax highlighting
+        hljs.highlightElement(highlight);
+        
+        // Adjust textarea height
+        adjustTextareaHeight();
+      }
+      
+      // Update line numbers
+      function updateLineNumbers() {
+        const lines = textarea.value.split('\n');
+        const count = lines.length;
+        
+        let lineNumbersHTML = '';
+        for (let i = 1; i <= count; i++) {
+          lineNumbersHTML += `<div>${i}</div>`;
+        }
+        
+        lineNumbers.innerHTML = lineNumbersHTML;
+        
+        // Make sure line numbers div has the same height as the textarea
+        lineNumbers.style.height = textarea.style.height;
+      }
+      
+      // Initial height adjustment
+      adjustTextareaHeight();
+      
+      // Adjust height when window is resized
+      window.addEventListener('resize', adjustTextareaHeight);
+    });
+  </script>
+</body>
+</html>
